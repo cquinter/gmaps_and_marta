@@ -1,0 +1,54 @@
+<p id="notice"><%= notice %></p>
+
+<h2 style="text-align: center;">Given you are currently standing at <%= @location.my_location %> ...</h2>
+
+<% if @nearby_buses.length == 0 %>
+  <h2 style="text-align: center;">Sorry, there are no buses close by.  Better order an Uber.</h2>
+<% else %>
+  <h2 style="text-align: center;">The closest buses to your location are shown on the map below!</h2>
+<% end %>
+
+<div id='map' style='height: 400px; width: 100%;'></div>
+
+<script>
+  var buses = [];
+</script>
+
+<% @nearby_buses.each do |bus| %>  <!-- this array uses the api and is defined in the locations controller -->
+  <script>
+    buses.push({
+      route: "<%= bus["ROUTE"] %>",
+      vehicle: "<%= bus["VEHICLE"] %>",
+      next_stop: "<%= bus["TIMEPOINT"] %>",
+      direction: "<%= bus["DIRECTION"] %>",
+      latitude: <%= bus["LATITUDE"] %>,
+      longitude: <%= bus["LONGITUDE"] %>
+    });
+  </script>
+<% end %>
+
+<script>
+  $(document).ready(function(){
+    function initialize() {
+      var user_coords = new google.maps.LatLng(<%= @location.latitude %>, <%= @location.longitude %>);
+      var map_options = {center: user_coords, zoom: 14, scrollwheel: false};
+      var map = new google.maps.Map(document.getElementById('map'), map_options);
+      var user_marker = new google.maps.Marker({position: user_coords, map: map, animation: google.maps.Animation.DROP});
+      var bus_markers = [];
+      var bus_info_windows = [];
+      for (index = 0; index < buses.length; index ++) {
+        var bus_coords = new google.maps.LatLng(buses[index].latitude, buses[index].longitude);
+        bus_markers[index] = new google.maps.Marker({position: bus_coords, map: map, icon: '/bus.png', animation: google.maps.Animation.DROP});
+        var bus_content = '<strong>Route: </strong>' + buses[index].route + '<br><strong>Vehicle: </strong>' + buses[index].vehicle + '<br><strong>Next Stop: </strong>' + buses[index].next_stop + '<br><strong>Direction: </strong>' + buses[index].direction
+        var info = new google.maps.InfoWindow({content: bus_content});
+        bus_info_windows[index] = new google.maps.InfoWindow({content: bus_content});
+        google.maps.event.addListener(bus_markers[index], 'click', function() {bus_info_windows[index].open(map, bus_markers[index])});
+        console.log(bus_info_windows[index]);
+      }
+    }
+    google.maps.event.addDomListener(window, 'load', initialize);
+  });
+</script>
+
+<%= link_to 'Edit', edit_location_path(@location) %> |
+<%= link_to 'Back', locations_path %>

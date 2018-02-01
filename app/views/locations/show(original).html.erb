@@ -1,0 +1,43 @@
+<p id="notice"><%= notice %></p>
+
+<h2>You Are Currently Standing At ...</h2>
+
+<p><%= @location.my_location %></p>
+
+<h2>The Closest Buses Are ...</h2>
+
+<% if @bus_count == 0 %>
+  <p>... not really that close.  Better order an Uber.</p>
+<% end %>
+
+<% @nearby_buses.each_with_index do |bus, index| %>
+  <p>
+    <strong>Route:</strong> <%= bus["ROUTE"] %><br>
+    <strong>Vehicle:</strong> <%= bus["VEHICLE"] %><br>
+    <strong>Next Stop:</strong> <%= bus["TIMEPOINT"] %>
+  </p>
+  <script>
+    $(document).ready(function() {
+    	function initialize() {
+    		var user_coords = new google.maps.LatLng(<%= @location.latitude %>, <%= @location.longitude %>);
+        var bus_coords = new google.maps.LatLng(<%= bus["LATITUDE"] %>, <%= bus["LONGITUDE"]%>);
+        var map_options = {center: user_coords, zoom: 13, scrollwheel: false};
+        var map = new google.maps.Map(document.getElementById('map-canvas<%= index %>'), map_options);
+        var user_marker = new google.maps.Marker({position: user_coords, map: map, animation: google.maps.Animation.DROP});
+        var content_string_user = "You are here!";
+        var info_window_user = new google.maps.InfoWindow({content: content_string_user});
+        google.maps.event.addListener(user_marker, 'click', function() {info_window_user.open(map, user_marker)})
+        var bus_icon = '/bus.png';
+        var bus_marker = new google.maps.Marker({position: bus_coords, map: map, icon: bus_icon, animation: google.maps.Animation.DROP});
+        var content_string_bus = "A bus is here!";
+        var info_window_bus = new google.maps.InfoWindow({content: content_string_bus});
+        google.maps.event.addListener(bus_marker, 'click', function() {info_window_bus.open(map, bus_marker)})
+    	}
+    	google.maps.event.addDomListener(window, 'load', initialize);
+    });
+  </script>
+  <div class="bus-map" id="map-canvas<%= index %>"></div>
+<% end %>
+
+<%= link_to 'Edit', edit_location_path(@location) %> |
+<%= link_to 'Back', locations_path %>
